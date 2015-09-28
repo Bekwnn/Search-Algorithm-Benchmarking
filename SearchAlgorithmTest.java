@@ -1,19 +1,28 @@
 import java.util.Random;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
 
 public class SearchAlgorithmTest
 {
-	static City[] cities = new City[26];
-	static boolean[][] simpleAdjacencyMat = new boolean[26][26];
-	static float[][] weightedAdjacencyMat = new float[26][26];
+	static final int numberOfCities = 26;
+	static final float adjacencyChance = 0.4f;
+	
+	static City[] cities = new City[numberOfCities];
+	static boolean[][] simpleAdjacencyMat = new boolean[numberOfCities][numberOfCities];
+	static double[][] weightedAdjacencyMat = new double[numberOfCities][numberOfCities];
 	
 	static Random randomGenerator;
 	
 	public static void main(String[] args)
 	{
 		GenerateCities();
-		GenerateSimpleAdjacencyMatrix();
+		GenerateLocalSimpleAdjacencyMatrix();
+		//GenerateRandomSimpleAdjacencyMatrix();
+		GenerateWeightedAdjacencyMatrix();
 		
 		PrintMap();
+		PrintSimpleAdjacencyMatrix();
+		PrintWeightedAdjacencyMatrix();
 	}
 	
 	public static void GenerateCities()
@@ -24,13 +33,83 @@ public class SearchAlgorithmTest
 		
 		for (int i = 0; i < cities.length; i++)
 		{
-			cities[i] = new City(Character.toString((char)(startChar + i)), randomGenerator.nextInt(100), randomGenerator.nextInt(100));
+			cities[i] = new City(Character.toString((char)(startChar + i)), i, randomGenerator.nextInt(100), randomGenerator.nextInt(100));
 		}
 	}
 	
-	public static void GenerateSimpleAdjacencyMatrix()
+	public static void GenerateRandomSimpleAdjacencyMatrix()
 	{
-		
+		for (int i = 0; i < simpleAdjacencyMat.length; i++)
+		{
+			for (int j = 0; j < simpleAdjacencyMat[i].length; j++)
+			{
+				if (randomGenerator.nextFloat() < adjacencyChance)
+				{
+					simpleAdjacencyMat[i][j] = true;
+				}
+				else
+				{
+					simpleAdjacencyMat[i][j] = false;
+				}
+			}
+		}
+	}
+	
+	public static void GenerateLocalSimpleAdjacencyMatrix()
+	{
+		for (City curCity : cities)
+		{
+			City[] closestFive = new City[5];
+			int indexOfFarthestClosest = 0;
+			
+			for (City otherCity : cities)
+			{
+				if (curCity == otherCity) continue; //skips itself
+				
+				//if a value in closest five is null or this other city is closer than the farthest of the close five
+				if (closestFive[indexOfFarthestClosest] == null ||
+					curCity.DistanceTo(otherCity) < curCity.DistanceTo(closestFive[indexOfFarthestClosest]))
+				{
+					//replace farthest of close five with new closer city
+					closestFive[indexOfFarthestClosest] = otherCity;
+					
+					//find the new farthest closest
+					for (int i = 0; i < closestFive.length; i++)
+					{
+						if (closestFive[indexOfFarthestClosest] != null && (closestFive[i] == null ||
+							curCity.DistanceTo(closestFive[i]) > curCity.DistanceTo(closestFive[indexOfFarthestClosest])))
+						{
+							indexOfFarthestClosest = i;
+						}
+					}
+				}
+			}
+			
+			ShuffleArray(closestFive);
+				
+			for (int i = 0; i < 3; i++)
+			{
+				simpleAdjacencyMat[closestFive[i].cityIndex][curCity.cityIndex] = true;
+			}
+		}
+	}
+	
+	public static void GenerateWeightedAdjacencyMatrix()
+	{
+		for (int i = 0; i < simpleAdjacencyMat.length; i++)
+		{
+			for (int j = 0; j < simpleAdjacencyMat[i].length; j++)
+			{
+				if (simpleAdjacencyMat[i][j] == true)
+				{
+					weightedAdjacencyMat[i][j] = cities[i].DistanceTo(cities[j]);
+				}
+				else
+				{
+					weightedAdjacencyMat[i][j] = 0.0;
+				}
+			}
+		}
 	}
 	
 	public static void PrintMap()
@@ -68,6 +147,44 @@ public class SearchAlgorithmTest
 				System.out.print(character);
 			}
 			System.out.println();
+		}
+	}
+	
+	//mainly for debug purposes
+	public static void PrintSimpleAdjacencyMatrix()
+	{
+		for (boolean[] row : simpleAdjacencyMat) {
+			for (boolean bool : row) {
+				System.out.print(((bool)? 1 : 0));
+			}
+			System.out.println();
+		}
+	}
+	
+	//mainly for debug purposes
+	public static void PrintWeightedAdjacencyMatrix()
+	{
+		DecimalFormat df = new DecimalFormat("000");
+		
+		for (double[] row : weightedAdjacencyMat) {
+			for (double val : row) {
+				System.out.print(df.format(val) + " ");
+			}
+			System.out.println();
+		}
+	}
+	
+	//uses Fisher-Yates shuffle
+	static <T> void ShuffleArray(T[] ar)
+	{
+		Random rnd = new Random();
+		for (int i = ar.length - 1; i > 0; i--)
+		{
+			int index = rnd.nextInt(i + 1);
+			// Simple swap
+			T a = ar[index];
+			ar[index] = ar[i];
+			ar[i] = a;
 		}
 	}
 }
