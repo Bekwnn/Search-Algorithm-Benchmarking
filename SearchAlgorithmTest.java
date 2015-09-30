@@ -1,28 +1,141 @@
 import java.util.Random;
 import java.text.DecimalFormat;
+import java.util.Stack;
 import java.util.ArrayList;
 
 public class SearchAlgorithmTest
 {
-	static final int numberOfCities = 26;
-	static final float adjacencyChance = 0.4f;
+	static final int NUMBEROFCITIES = 26;
+	static final float ADJACENCYCHANCE = 0.4f;
 	
-	static City[] cities = new City[numberOfCities];
-	static boolean[][] simpleAdjacencyMat = new boolean[numberOfCities][numberOfCities];
-	static double[][] weightedAdjacencyMat = new double[numberOfCities][numberOfCities];
+	static City[] cities = new City[NUMBEROFCITIES];
+	static boolean[][] simpleAdjacencyMat = new boolean[NUMBEROFCITIES][NUMBEROFCITIES];
+	static double[][] weightedAdjacencyMat = new double[NUMBEROFCITIES][NUMBEROFCITIES];
 	
 	static Random randomGenerator;
 	
 	public static void main(String[] args)
 	{
-		GenerateCities();
-		GenerateLocalSimpleAdjacencyMatrix();
-		//GenerateRandomSimpleAdjacencyMatrix();
-		GenerateWeightedAdjacencyMatrix();
+		for (int i = 0; i < 35; i++)
+		{
+			GenerateCities();
+			
+			//use only one of the two below:
+			//GenerateLocalSimpleAdjacencyMatrix();
+			GenerateRandomSimpleAdjacencyMatrix();
+			
+			GenerateWeightedAdjacencyMatrix();
+			
+			//PrintMap();
+			
+			//PrintSimpleAdjacencyMatrix();
+			//PrintWeightedAdjacencyMatrix();
+			
+			Stack<City> route = IterativeDeepeningSearch(cities[0], cities[15]);
+			
+			PrintRoute(route);
+		}
+	}
+	
+	public static Stack<City> IterativeDeepeningSearch(City startCity, City goalCity)
+	{
+		Stack<City> retStack;
+		int depth = 1;
+		do
+		{
+			retStack = DepthFirstToDepth(startCity, goalCity, depth);
+			depth++;
+		} while (retStack == null);
 		
-		PrintMap();
-		PrintSimpleAdjacencyMatrix();
-		PrintWeightedAdjacencyMatrix();
+		return retStack;
+	}
+	
+	//returns route to goal if success
+	//returns empty stack if no path failure
+	//returns null if depth limit reached
+	//- toDepth of 0 means regular depth first search
+	public static Stack<City> DepthFirstToDepth(City startCity, City goalCity, int toDepth)
+	{
+		boolean[] visited = new boolean[NUMBEROFCITIES];
+		if (toDepth < 1) toDepth = Integer.MAX_VALUE;
+		Stack<City> searchStack = new Stack<City>();
+		
+		//depth search from first city
+		int currentDepth = 0;
+		boolean depthLimitReached = false;
+		visited[startCity.cityIndex] = true;
+		searchStack.push(startCity);
+		
+		while (!searchStack.empty())
+		{
+			//PrintRoute(searchStack);
+			City curCity = searchStack.peek();
+			
+			//if the current city is the goal city, we've reached a success
+			if (curCity == goalCity)
+			{
+				return searchStack;
+			}
+			
+			//if we're not at max depth, look for nearest neighbor
+			ArrayList<City> neighbor = new ArrayList<City>();
+			if (currentDepth < toDepth)
+			{
+				neighbor = GetUnvisitedNeighbors(curCity, visited, false);
+			}
+			else
+			{
+				depthLimitReached = true;
+			}
+			
+			//if there is a neighbor push it on the stack and add 1 to current depth
+			if (!neighbor.isEmpty())
+			{
+				//TODO: currently fast for A to B and really slow for A to Z,
+				//	since it prioritizes which neighbor to visit 'alphabetically'
+				
+				//NOTE: may perform worse as has to get all neighbors, test against alphabetical
+				int neighborToVisit = randomGenerator.nextInt(neighbor.size());
+				searchStack.push(neighbor.get(neighborToVisit));
+				visited[neighbor.get(neighborToVisit).cityIndex] = true;
+				
+				//searchStack.push(neighbor.get(0));
+				//visited[neighbor.get(0).cityIndex] = true;
+				
+				currentDepth++;
+			}
+			//otherwise pop the stack
+			else
+			{
+				searchStack.pop();
+				currentDepth--;
+			}
+		}
+		
+		if (depthLimitReached)
+		{
+			return null;
+		}
+		else
+		{
+			return searchStack;
+		}
+	}
+	
+	public static ArrayList<City> GetUnvisitedNeighbors(City city, boolean[] visited, boolean singular)
+	{
+		ArrayList<City> retList = new ArrayList<City>();
+		
+		for (int i = 0; i < simpleAdjacencyMat.length; i++)
+		{
+			if (simpleAdjacencyMat[city.cityIndex][i] == true && visited[i] == false)
+			{
+				retList.add(cities[i]);
+				if (singular) break;
+			}
+		}
+		
+		return retList;
 	}
 	
 	public static void GenerateCities()
@@ -43,7 +156,7 @@ public class SearchAlgorithmTest
 		{
 			for (int j = 0; j < simpleAdjacencyMat[i].length; j++)
 			{
-				if (randomGenerator.nextFloat() < adjacencyChance)
+				if (randomGenerator.nextFloat() < ADJACENCYCHANCE)
 				{
 					simpleAdjacencyMat[i][j] = true;
 				}
@@ -175,7 +288,7 @@ public class SearchAlgorithmTest
 	}
 	
 	//uses Fisher-Yates shuffle
-	static <T> void ShuffleArray(T[] ar)
+	public static <T> void ShuffleArray(T[] ar)
 	{
 		Random rnd = new Random();
 		for (int i = ar.length - 1; i > 0; i--)
@@ -186,5 +299,38 @@ public class SearchAlgorithmTest
 			ar[index] = ar[i];
 			ar[i] = a;
 		}
+	}
+	
+	public static void PrintRoute(Stack<City> stack)
+	{
+		if (stack == null)
+		{
+			System.out.println("Stack is null.");
+			return;
+		}
+		/*
+		if (stack.isEmpty())
+		{
+			System.out.print("No route.");
+		}
+		
+		while (!stack.isEmpty())
+		{
+			System.out.print(stack.pop().name + " ");
+		}
+		*/
+		
+		ArrayList<City> copy = new ArrayList<City>(stack);
+		if (copy.isEmpty())
+		{
+			System.out.print("No route.");
+		}
+		
+		for (City curCity : copy)
+		{
+			System.out.print(curCity.name + " ");
+		}
+		
+		System.out.println();
 	}
 }
