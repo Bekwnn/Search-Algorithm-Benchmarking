@@ -2,11 +2,12 @@ import java.util.Random;
 import java.text.DecimalFormat;
 import java.util.Stack;
 import java.util.ArrayList;
+import java.util.LinkedList;
 
 public class SearchAlgorithmTest
 {
 	static final int NUMBEROFCITIES = 26;
-	static final float ADJACENCYCHANCE = 0.4f;
+	static final float ADJACENCYCHANCE = 0.1f;
 	
 	static City[] cities = new City[NUMBEROFCITIES];
 	static boolean[][] simpleAdjacencyMat = new boolean[NUMBEROFCITIES][NUMBEROFCITIES];
@@ -31,12 +32,57 @@ public class SearchAlgorithmTest
 			//PrintSimpleAdjacencyMatrix();
 			//PrintWeightedAdjacencyMatrix();
 			
-			Stack<City> route = IterativeDeepeningSearch(cities[0], cities[15]);
+			/*//depth-first search:
+			Stack<City> dfsRoute = DepthFirstToDepth(cities[0], cities[25], 0);
+			System.out.print("DFS: ");
+			PrintRoute(dfsRoute);
+			*/
 			
-			PrintRoute(route);
+			/*//iterative deepening search:
+			Stack<City> iterativeRoute = IterativeDeepeningSearch(cities[0], cities[25]);
+			System.out.print("IDS: ");
+			PrintRoute(iterativeRoute);
+			*/
+			
+			/*//breadth-first search:
+			System.out.println("BFS: " + 
+				(BreadthFirstSearch(cities[0], cities[25]))? "Found a path." : "No path exists.");
+			*/
+			
+			//TODO: A STAR, MOTHERFUCKERS, WOOO
 		}
 	}
 	
+	//merely returns success or failure
+	public static boolean BreadthFirstSearch(City startCity, City goalCity)
+	{
+		boolean[] visited = new boolean[NUMBEROFCITIES];
+		LinkedList<City> searchQueue = new LinkedList<City>();
+		
+		//breadth search from first city
+		visited[startCity.cityIndex] = true;
+		searchQueue.addLast(startCity);
+		
+		while (!searchQueue.isEmpty())
+		{
+			City curCity = searchQueue.pop();
+			
+			ArrayList<City> neighbors = GetUnvisitedNeighbors(curCity, visited, false);
+			
+			for (City someNeighbor : neighbors)
+			{
+				searchQueue.addLast(someNeighbor);
+				visited[someNeighbor.cityIndex] = true;
+				
+				//if we found our goal, return true
+				if (someNeighbor == goalCity) return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	//calls DepthFirstToDepth repeatedly, incrementing the depth
 	public static Stack<City> IterativeDeepeningSearch(City startCity, City goalCity)
 	{
 		Stack<City> retStack;
@@ -308,17 +354,6 @@ public class SearchAlgorithmTest
 			System.out.println("Stack is null.");
 			return;
 		}
-		/*
-		if (stack.isEmpty())
-		{
-			System.out.print("No route.");
-		}
-		
-		while (!stack.isEmpty())
-		{
-			System.out.print(stack.pop().name + " ");
-		}
-		*/
 		
 		ArrayList<City> copy = new ArrayList<City>(stack);
 		if (copy.isEmpty())
