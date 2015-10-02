@@ -44,13 +44,76 @@ public class SearchAlgorithmTest
 			PrintRoute(iterativeRoute);
 			*/
 			
-			/*//breadth-first search:
+			//breadth-first search:
 			System.out.println("BFS: " + 
-				(BreadthFirstSearch(cities[0], cities[25]))? "Found a path." : "No path exists.");
-			*/
+				((BreadthFirstSearch(cities[0], cities[25]))? "Found a path." : "No path exists."));
 			
-			//TODO: A STAR, MOTHERFUCKERS, WOOO
+			
+			//A STAR, MOTHERFUCKERS, WOOO
+			System.out.println("A*: " + 
+				((AStar(cities[0], cities[25]))? "Found a path." : "No path exists."));
 		}
+	}
+	
+	public static boolean AStar(City startCity, City goalCity)
+	{
+		boolean[] visited = new boolean[NUMBEROFCITIES];
+		ArrayList<City> openSet = new ArrayList<City>();
+		openSet.add(startCity);
+		//cameFrom
+		
+		double[] gScore = new double[NUMBEROFCITIES];
+		double[] fScore = new double[NUMBEROFCITIES];
+		//initiate scores to infinity
+		for (int i = 0; i < NUMBEROFCITIES; i++)
+		{
+			gScore[i] = Double.MAX_VALUE;
+			fScore[i] = Double.MAX_VALUE;
+		}
+		
+		gScore[startCity.cityIndex] = 0;
+		fScore[startCity.cityIndex] = gScore[startCity.cityIndex] + EuclidianCost(startCity, goalCity);
+		
+		while (!openSet.isEmpty())
+		{
+			//get city with smallest fScore
+			int minIndex = openSet.get(0).cityIndex;
+			for (City aCity : openSet)
+			{
+				if (fScore[aCity.cityIndex] < fScore[minIndex])
+					minIndex = aCity.cityIndex;
+			}
+			City curCity = cities[minIndex];
+			
+			if (curCity == goalCity) return true; //change later
+			
+			//remove curCity from openSet, mark as visited
+			openSet.remove(curCity);
+			visited[curCity.cityIndex] = true;
+			
+			//get neighbors of current
+			ArrayList<City> neighbors = GetUnvisitedNeighbors(curCity, visited, false);
+			for (City neighbor : neighbors)
+			{
+				double tentativeGScore = gScore[curCity.cityIndex] + curCity.DistanceTo(neighbor);
+				
+				if (!openSet.contains(neighbor) || tentativeGScore < gScore[neighbor.cityIndex])
+				{
+					gScore[neighbor.cityIndex] = tentativeGScore;
+					fScore[neighbor.cityIndex] = gScore[neighbor.cityIndex] + EuclidianCost(neighbor, goalCity);
+					
+					if (!openSet.contains(neighbor))
+						openSet.add(neighbor);
+				}
+			}
+		}
+		
+		return false;
+	}
+	
+	public static double EuclidianCost(City start, City goal)
+	{
+		return start.DistanceTo(goal);
 	}
 	
 	//merely returns success or failure
