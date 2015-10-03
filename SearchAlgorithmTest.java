@@ -7,7 +7,7 @@ import java.util.LinkedList;
 public class SearchAlgorithmTest
 {
 	static final int NUMBEROFCITIES = 26;
-	static final float ADJACENCYCHANCE = 0.1f;
+	static final float ADJACENCYCHANCE = 0.4f;
 	
 	static City[] cities = new City[NUMBEROFCITIES];
 	static boolean[][] simpleAdjacencyMat = new boolean[NUMBEROFCITIES][NUMBEROFCITIES];
@@ -17,7 +17,13 @@ public class SearchAlgorithmTest
 	
 	public static void main(String[] args)
 	{
-		for (int i = 0; i < 35; i++)
+		long[] dfsTimes = new long[100];
+		long[] idsTimes = new long[100];
+		long[] bfsTimes = new long[100];
+		long[] aStarTimes = new long[100];
+		long[] aStarAltTimes = new long[100];
+		
+		for (int i = 0; i < 100; i++)
 		{
 			GenerateCities();
 			
@@ -28,34 +34,119 @@ public class SearchAlgorithmTest
 			GenerateWeightedAdjacencyMatrix();
 			
 			//PrintMap();
-			
 			//PrintSimpleAdjacencyMatrix();
 			//PrintWeightedAdjacencyMatrix();
 			
-			/*//depth-first search:
-			Stack<City> dfsRoute = DepthFirstToDepth(cities[0], cities[25], 0);
-			System.out.print("DFS: ");
-			PrintRoute(dfsRoute);
-			*/
+			City startCity = cities[randomGenerator.nextInt(26)];
+			City goalCity = cities[randomGenerator.nextInt(26)];
 			
-			/*//iterative deepening search:
-			Stack<City> iterativeRoute = IterativeDeepeningSearch(cities[0], cities[25]);
-			System.out.print("IDS: ");
+			//depth-first search:
+			long dfsStartTime = System.nanoTime();
+			Stack<City> dfsRoute = DepthFirstToDepth(startCity, goalCity, 0);
+			long dfsEndTime = System.nanoTime();
+			dfsTimes[i] = dfsEndTime - dfsStartTime;
+			
+			System.out.print("DFS:\n\t");
+			PrintRoute(dfsRoute);
+			System.out.println("\tTime: " + dfsTimes[i]);
+			
+			
+			//iterative deepening search:
+			long idsStartTime = System.nanoTime();
+			Stack<City> iterativeRoute = IterativeDeepeningSearch(startCity, goalCity);
+			long idsEndTime = System.nanoTime();
+			idsTimes[i] = idsEndTime - idsStartTime;
+			
+			System.out.print("IDS:\n\t");
 			PrintRoute(iterativeRoute);
-			*/
+			System.out.println("\tTime: " + idsTimes[i]);
+			
 			
 			//breadth-first search:
-			System.out.println("BFS: " + 
-				((BreadthFirstSearch(cities[0], cities[25]))? "Found a path." : "No path exists."));
+			long bfsStartTime = System.nanoTime();
+			String result = (BreadthFirstSearch(startCity, goalCity))? "Found a path." : "No path exists.";
+			long bfsEndTime = System.nanoTime();
+			bfsTimes[i] = bfsEndTime - bfsStartTime;
+			
+			System.out.println("BFS:\n\t" + result);
+			System.out.println("\tTime: " + bfsTimes[i]);
 			
 			
 			//A STAR, MOTHERFUCKERS, WOOO
-			System.out.println("A*: " + 
-				((AStar(cities[0], cities[25]))? "Found a path." : "No path exists."));
+			long aStarStartTime = System.nanoTime();
+			String result2 = (AStar(startCity, goalCity, false))? "Found a path." : "No path exists.";
+			long aStarEndTime = System.nanoTime();
+			aStarTimes[i] = aStarEndTime - aStarStartTime;
+			
+			System.out.println("A*:\n\t" + result2);
+			System.out.println("\tTime: " + aStarTimes[i]);
+			
+			//A* alternate heuristic, basically euclidean, but peaks ahead 1 step
+			long aStarAltStartTime = System.nanoTime();
+			String result3 = (AStar(startCity, goalCity, true))? "Found a path." : "No path exists.";
+			long aStarAltEndTime = System.nanoTime();
+			aStarAltTimes[i] = aStarAltEndTime - aStarAltStartTime;
+			
+			System.out.println("A*:\n\t" + result3);
+			System.out.println("\tTime: " + aStarAltTimes[i]);
+			
 		}
+		System.out.println("Min for DFS: " + FindMin(dfsTimes));
+		System.out.println("Min for BFS: " + FindMin(bfsTimes));
+		System.out.println("Min for IDS: " + FindMin(idsTimes));
+		System.out.println("Min for  A*: " + FindMin(aStarTimes));
+		System.out.println("Min for AL*: " + FindMin(aStarAltTimes));
+		
+		System.out.println("Max for DFS: " + FindMax(dfsTimes));
+		System.out.println("Max for BFS: " + FindMax(bfsTimes));
+		System.out.println("Max for IDS: " + FindMax(idsTimes));
+		System.out.println("Max for  A*: " + FindMax(aStarTimes));
+		System.out.println("Max for AL*: " + FindMax(aStarAltTimes));
+		
+		System.out.println("Average for DFS: " + ComputeLongAverage(dfsTimes));
+		System.out.println("Average for BFS: " + ComputeLongAverage(bfsTimes));
+		System.out.println("Average for IDS: " + ComputeLongAverage(idsTimes));
+		System.out.println("Average for  A*: " + ComputeLongAverage(aStarTimes));
+		System.out.println("Average for AL*: " + ComputeLongAverage(aStarAltTimes));
+
+		
 	}
 	
-	public static boolean AStar(City startCity, City goalCity)
+	public static double ComputeLongAverage(long[] array)
+	{
+		double avg = 0;
+		for (int i = 0; i < 100; i++)
+		{
+			avg += array[i];
+		}
+		return avg/100;
+	}
+	
+	public static long FindMin(long[] array)
+	{
+		long min = Long.MAX_VALUE;
+		for (long l : array)
+		{
+			if (l < min)
+				min = l;
+		}
+		
+		return min;
+	}
+	
+	public static long FindMax(long[] array)
+	{
+		long max = Long.MIN_VALUE;
+		for (long l : array)
+		{
+			if (l > max)
+				max = l;
+		}
+		
+		return max;
+	}
+	
+	public static boolean AStar(City startCity, City goalCity, boolean altHeuristic)
 	{
 		boolean[] visited = new boolean[NUMBEROFCITIES];
 		ArrayList<City> openSet = new ArrayList<City>();
@@ -72,7 +163,8 @@ public class SearchAlgorithmTest
 		}
 		
 		gScore[startCity.cityIndex] = 0;
-		fScore[startCity.cityIndex] = gScore[startCity.cityIndex] + EuclidianCost(startCity, goalCity);
+		fScore[startCity.cityIndex] = gScore[startCity.cityIndex] +
+			((altHeuristic)? BestNeighborCost(startCity, goalCity) : EuclidianCost(startCity, goalCity));
 		
 		while (!openSet.isEmpty())
 		{
@@ -100,7 +192,8 @@ public class SearchAlgorithmTest
 				if (!openSet.contains(neighbor) || tentativeGScore < gScore[neighbor.cityIndex])
 				{
 					gScore[neighbor.cityIndex] = tentativeGScore;
-					fScore[neighbor.cityIndex] = gScore[neighbor.cityIndex] + EuclidianCost(neighbor, goalCity);
+					fScore[neighbor.cityIndex] = gScore[neighbor.cityIndex] +
+						((altHeuristic)? BestNeighborCost(startCity, goalCity) : EuclidianCost(startCity, goalCity));
 					
 					if (!openSet.contains(neighbor))
 						openSet.add(neighbor);
@@ -114,6 +207,22 @@ public class SearchAlgorithmTest
 	public static double EuclidianCost(City start, City goal)
 	{
 		return start.DistanceTo(goal);
+	}
+	
+	public static double BestNeighborCost(City start, City goal)
+	{
+		boolean[] visited = new boolean[NUMBEROFCITIES]; //all false
+		ArrayList<City> neighbors = GetUnvisitedNeighbors(start, visited, false);
+		City closest = neighbors.get(0);
+		for (City neighbor : neighbors)
+		{
+			if (neighbor.DistanceTo(goal) < closest.DistanceTo(goal))
+			{
+					closest = neighbor;
+			}
+		}
+		
+		return start.DistanceTo(closest) + closest.DistanceTo(goal);
 	}
 	
 	//merely returns success or failure
@@ -155,7 +264,6 @@ public class SearchAlgorithmTest
 			retStack = DepthFirstToDepth(startCity, goalCity, depth);
 			depth++;
 		} while (retStack == null);
-		
 		return retStack;
 	}
 	
@@ -265,7 +373,7 @@ public class SearchAlgorithmTest
 		{
 			for (int j = 0; j < simpleAdjacencyMat[i].length; j++)
 			{
-				if (randomGenerator.nextFloat() < ADJACENCYCHANCE)
+				if (randomGenerator.nextFloat() < ADJACENCYCHANCE && i != j)
 				{
 					simpleAdjacencyMat[i][j] = true;
 				}
@@ -309,9 +417,16 @@ public class SearchAlgorithmTest
 			
 			ShuffleArray(closestFive);
 				
-			for (int i = 0; i < 3; i++)
+			for (int i = 0; i < closestFive.length; i++)
 			{
-				simpleAdjacencyMat[closestFive[i].cityIndex][curCity.cityIndex] = true;
+				if (i <= 3)
+				{
+					simpleAdjacencyMat[closestFive[i].cityIndex][curCity.cityIndex] = true;
+				}
+				else
+				{
+					simpleAdjacencyMat[closestFive[i].cityIndex][curCity.cityIndex] = false;
+				}
 			}
 		}
 	}
