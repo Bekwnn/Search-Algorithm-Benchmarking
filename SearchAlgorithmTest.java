@@ -28,8 +28,8 @@ public class SearchAlgorithmTest
 			GenerateCities();
 			
 			//use only one of the two below:
-			//GenerateLocalSimpleAdjacencyMatrix();
-			GenerateRandomSimpleAdjacencyMatrix();
+			GenerateLocalSimpleAdjacencyMatrix();
+			//GenerateRandomSimpleAdjacencyMatrix();
 			
 			GenerateWeightedAdjacencyMatrix();
 			
@@ -87,7 +87,7 @@ public class SearchAlgorithmTest
 			long aStarAltEndTime = System.nanoTime();
 			aStarAltTimes[i] = aStarAltEndTime - aStarAltStartTime;
 			
-			System.out.println("A*:\n\t" + result3);
+			System.out.println("Al*:\n\t" + result3);
 			System.out.println("\tTime: " + aStarAltTimes[i]);
 			
 		}
@@ -213,7 +213,9 @@ public class SearchAlgorithmTest
 	{
 		boolean[] visited = new boolean[NUMBEROFCITIES]; //all false
 		ArrayList<City> neighbors = GetUnvisitedNeighbors(start, visited, false);
+		if (neighbors.isEmpty()) return Double.MAX_VALUE; //node has no neighbors
 		City closest = neighbors.get(0);
+		
 		for (City neighbor : neighbors)
 		{
 			if (neighbor.DistanceTo(goal) < closest.DistanceTo(goal))
@@ -222,7 +224,7 @@ public class SearchAlgorithmTest
 			}
 		}
 		
-		return start.DistanceTo(closest) + closest.DistanceTo(goal);
+		return closest.DistanceTo(goal);
 	}
 	
 	//merely returns success or failure
